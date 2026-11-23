@@ -1,0 +1,130 @@
+@model IEnumerable<AcxiomCRM.Models.FollowUp>
+@{
+    ViewData["Title"] = "Follow-up Management";
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Follow-up Schedule & Cadence</h4>
+        <p class="text-muted small mb-0">Track meetings, calls, demos, and pending client check-ins.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-calendar-plus me-1"></i>Schedule Follow-up</a>
+</div>
+
+<!-- Filters -->
+<div class="card p-3 mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="@Url.Action("Index", new { filter = "All" })" class="btn @(ViewBag.CurrentFilter == "All" || string.IsNullOrEmpty(ViewBag.CurrentFilter) ? "btn-primary" : "btn-outline-secondary")">All Follow-ups</a>
+            <a href="@Url.Action("Index", new { filter = "Pending" })" class="btn @(ViewBag.CurrentFilter == "Pending" ? "btn-primary" : "btn-outline-secondary")">Pending</a>
+            <a href="@Url.Action("Index", new { filter = "Overdue" })" class="btn @(ViewBag.CurrentFilter == "Overdue" ? "btn-danger" : "btn-outline-danger")">Overdue</a>
+            <a href="@Url.Action("Index", new { filter = "Completed" })" class="btn @(ViewBag.CurrentFilter == "Completed" ? "btn-success" : "btn-outline-success")">Completed</a>
+        </div>
+    </div>
+</div>
+
+<!-- Follow-ups Table -->
+<div class="card overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Due Date & Time</th>
+                    <th>Type</th>
+                    <th>Subject</th>
+                    <th>Associated With</th>
+                    <th>Assigned To</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    @foreach (var f in Model)
+                    {
+                        var isOverdue = (f.Status == "Planned" || f.Status == "Missed") && f.FollowUpDate < DateTime.UtcNow;
+                        <tr>
+                            <td>
+                                <span class="@(isOverdue ? "text-danger fw-bold" : "text-dark")">
+                                    <i class="bi bi-clock me-1"></i>@f.FollowUpDate.ToString("MMM dd, yyyy HH:mm")
+                                </span>
+                                @if (isOverdue)
+                                {
+                                    <span class="badge bg-danger ms-1">Overdue</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-primary border">
+                                    @if (f.FollowUpType == "Call") { <i class="bi bi-telephone-fill me-1"></i> }
+                                    else if (f.FollowUpType == "Email") { <i class="bi bi-envelope-fill me-1"></i> }
+                                    else if (f.FollowUpType == "Meeting") { <i class="bi bi-people-fill me-1"></i> }
+                                    else { <i class="bi bi-display me-1"></i> }
+                                    @f.FollowUpType
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">@f.Subject</div>
+                                @if (!string.IsNullOrEmpty(f.Remarks))
+                                {
+                                    <div class="small text-muted text-truncate" style="max-width: 300px;">@f.Remarks</div>
+                                }
+                            </td>
+                            <td>
+                                @if (f.Customer != null)
+                                {
+                                    <a asp-controller="Customers" asp-action="Details" asp-route-id="@f.CustomerId" class="text-primary text-decoration-none small">
+                                        <i class="bi bi-building me-1"></i>@f.Customer.CustomerName
+                                    </a>
+                                }
+                                else if (f.Lead != null)
+                                {
+                                    <a asp-controller="Leads" asp-action="Details" asp-route-id="@f.LeadId" class="text-dark text-decoration-none small">
+                                        <i class="bi bi-person me-1"></i>@f.Lead.LeadName
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">General</span>
+                                }
+                            </td>
+                            <td>@(f.AssignedUser?.FullName ?? "Unassigned")</td>
+                            <td>
+                                @if (f.Status == "Completed") { <span class="badge bg-success">Completed</span> }
+                                else if (f.Status == "Planned") { <span class="badge bg-primary">Planned</span> }
+                                else if (f.Status == "Missed") { <span class="badge bg-danger">Missed</span> }
+                                else { <span class="badge bg-secondary">Cancelled</span> }
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    @if (f.Status != "Completed")
+                                    {
+                                        <form asp-action="Complete" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@f.FollowUpId" />
+                                            <button type="submit" class="btn btn-outline-success" title="Mark as Completed">
+                                                <i class="bi bi-check-lg"></i> Complete
+                                            </button>
+                                        </form>
+                                    }
+                                    <a asp-action="Edit" asp-route-id="@f.FollowUpId" class="btn btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-calendar-check fs-1 d-block mb-2"></i>
+                            No follow-ups found for the selected filter.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

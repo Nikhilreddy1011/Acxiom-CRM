@@ -1,0 +1,99 @@
+@model AcxiomCRM.Models.Lead
+@{
+    ViewData["Title"] = $"Lead Details - {Model.LeadName}";
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2">
+            <h4 class="fw-bold mb-0">@Model.LeadName</h4>
+            <span class="badge bg-light text-dark border">@Model.LeadCode</span>
+            <span class="badge bg-primary">@Model.Status</span>
+            <span class="badge bg-warning text-dark">Priority: @Model.Priority</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">Source: @Model.Source • Expected Value: $@Model.ExpectedValue.ToString("N0")</p>
+    </div>
+    <div class="d-flex gap-2">
+        @if (Model.Status != "Converted")
+        {
+            <a asp-action="Convert" asp-route-id="@Model.LeadId" class="btn btn-success"><i class="bi bi-arrow-repeat me-1"></i>Convert Lead</a>
+        }
+        <a asp-action="Edit" asp-route-id="@Model.LeadId" class="btn btn-outline-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+        <a asp-controller="FollowUps" asp-action="Create" asp-route-leadId="@Model.LeadId" class="btn btn-outline-secondary"><i class="bi bi-calendar-plus me-1"></i>Schedule Follow-up</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<!-- OmniRoute AI Lead Assessment -->
+@if (ViewBag.AiSummary != null)
+{
+    <div class="card border-0 mb-4 text-white shadow-sm" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-info text-dark fw-bold"><i class="bi bi-cpu me-1"></i>OmniRoute AI Lead Assessment</span>
+            </div>
+            <div class="small leading-relaxed" style="white-space: pre-line;">
+                @ViewBag.AiSummary
+            </div>
+        </div>
+    </div>
+}
+
+<div class="row g-4 mb-4">
+    <!-- Lead Details -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <h6 class="fw-bold text-dark mb-3">Lead Information</h6>
+            <div class="mb-3">
+                <label class="text-muted small">Company</label>
+                <div class="fw-semibold">@(Model.CompanyName ?? "N/A")</div>
+            </div>
+            <div class="mb-3">
+                <label class="text-muted small">Email Address</label>
+                <div><a href="mailto:@Model.Email" class="text-primary text-decoration-none fw-medium">@Model.Email</a></div>
+            </div>
+            <div class="mb-3">
+                <label class="text-muted small">Phone Number</label>
+                <div><a href="tel:@Model.Phone" class="text-primary text-decoration-none fw-medium">@Model.Phone</a></div>
+            </div>
+            <div class="mb-3">
+                <label class="text-muted small">Acquisition Source</label>
+                <div>@Model.Source</div>
+            </div>
+            <div class="mb-3">
+                <label class="text-muted small">Assigned Owner</label>
+                <div class="fw-semibold">@(Model.AssignedUser?.FullName ?? "Unassigned")</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Follow-ups -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold text-dark mb-0">Follow-ups (@Model.FollowUps.Count)</h6>
+                <a asp-controller="FollowUps" asp-action="Create" asp-route-leadId="@Model.LeadId" class="small fw-semibold text-decoration-none">Add Follow-up</a>
+            </div>
+
+            @if (Model.FollowUps.Any())
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var f in Model.FollowUps)
+                    {
+                        <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">@f.Subject</div>
+                                <small class="text-muted">@f.FollowUpType • @f.FollowUpDate.ToString("MMM dd, yyyy")</small>
+                            </div>
+                            <span class="badge @(f.Status == "Completed" ? "bg-success" : "bg-warning text-dark")">@f.Status</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted small">No follow-ups scheduled for this lead.</div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,111 @@
+@model AcxiomCRM.ViewModels.ConvertLeadViewModel
+@{
+    ViewData["Title"] = $"Convert Lead - {Model.LeadName}";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card p-4 p-md-5">
+            <div class="d-flex align-items-center justify-content-between pb-3 mb-4 border-bottom">
+                <div>
+                    <h4 class="fw-bold mb-1 text-success"><i class="bi bi-arrow-repeat me-2"></i>Convert Lead to Customer & Opportunity</h4>
+                    <p class="text-muted small mb-0">Transform qualified prospect into an active client relationship and pipeline opportunity.</p>
+                </div>
+                <a asp-action="Details" asp-route-id="@Model.LeadId" class="btn btn-outline-secondary btn-sm">Cancel</a>
+            </div>
+
+            <form asp-action="Convert" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="LeadId" />
+                <input type="hidden" asp-for="LeadName" />
+                <input type="hidden" asp-for="CompanyName" />
+                <input type="hidden" asp-for="Email" />
+                <input type="hidden" asp-for="Phone" />
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+                <!-- Step 1: Customer Account Setup -->
+                <div class="p-3 mb-4 rounded-3 bg-light border">
+                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-person-check-fill text-primary me-2"></i>1. Customer Account Information</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="CustomerName" class="form-label fw-semibold small">Customer Account Name *</label>
+                            <input asp-for="CustomerName" class="form-control" required />
+                            <span asp-validation-for="CustomerName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Primary Email</label>
+                            <input value="@Model.Email" class="form-control bg-white" readonly />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Primary Phone</label>
+                            <input value="@Model.Phone" class="form-control bg-white" readonly />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Company Affiliation</label>
+                            <input value="@(Model.CompanyName ?? "N/A")" class="form-control bg-white" readonly />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Opportunity Deal Setup -->
+                <div class="p-3 mb-4 rounded-3 bg-light border">
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CreateOpportunity" class="form-check-input" id="toggleOpp" />
+                        <label class="form-check-label fw-bold text-dark" for="toggleOpp">
+                            <i class="bi bi-briefcase-fill text-success me-2"></i>2. Spawn Opportunity Deal in Pipeline
+                        </label>
+                    </div>
+
+                    <div id="oppSection" class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="OpportunityName" class="form-label fw-semibold small">Deal Name *</label>
+                            <input asp-for="OpportunityName" class="form-control" />
+                            <span asp-validation-for="OpportunityName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="OpportunityAmount" class="form-label fw-semibold small">Deal Value ($) *</label>
+                            <input asp-for="OpportunityAmount" type="number" step="100" class="form-control" />
+                            <span asp-validation-for="OpportunityAmount" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Stage" class="form-label fw-semibold small">Initial Stage</label>
+                            <select asp-for="Stage" class="form-select">
+                                <option value="Qualification">Qualification</option>
+                                <option value="Proposal">Proposal</option>
+                                <option value="Negotiation">Negotiation</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Probability" class="form-label fw-semibold small">Win Probability (%)</label>
+                            <input asp-for="Probability" type="number" min="0" max="100" class="form-control" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="ExpectedCloseDate" class="form-label fw-semibold small">Target Close Date</label>
+                            <input asp-for="ExpectedCloseDate" type="date" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                    <a asp-action="Details" asp-route-id="@Model.LeadId" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-success px-4 fw-semibold">
+                        <i class="bi bi-check-circle-fill me-1"></i>Confirm & Complete Conversion
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.getElementById('toggleOpp').addEventListener('change', function () {
+        document.getElementById('oppSection').style.display = this.checked ? 'flex' : 'none';
+    });
+</script>
+}

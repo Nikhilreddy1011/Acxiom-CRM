@@ -1,0 +1,161 @@
+@model IEnumerable<AcxiomCRM.Models.Opportunity>
+@{
+    ViewData["Title"] = "Opportunity Pipeline";
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Sales Opportunity Pipeline</h4>
+        <div class="d-flex align-items-center gap-3 mt-1">
+            <span class="text-muted small">Total: <strong>@ViewBag.TotalCount</strong> deals</span>
+            <span class="badge bg-primary px-3 py-2">Pipeline: $@ViewBag.TotalPipeline.ToString("N0")</span>
+            <span class="badge bg-success px-3 py-2">Weighted: $@ViewBag.WeightedPipeline.ToString("N0")</span>
+        </div>
+    </div>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-briefcase me-1"></i>New Opportunity</a>
+</div>
+
+<!-- Search & Filters -->
+<div class="card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Search opportunity or customer..." />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select name="stage" class="form-select">
+                <option value="">All Stages</option>
+                <option value="Qualification" selected="@(ViewBag.Stage == "Qualification")">Qualification</option>
+                <option value="Proposal" selected="@(ViewBag.Stage == "Proposal")">Proposal</option>
+                <option value="Negotiation" selected="@(ViewBag.Stage == "Negotiation")">Negotiation</option>
+                <option value="Won" selected="@(ViewBag.Stage == "Won")">Won</option>
+                <option value="Lost" selected="@(ViewBag.Stage == "Lost")">Lost</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="Open" selected="@(ViewBag.Status == "Open")">Open</option>
+                <option value="Won" selected="@(ViewBag.Status == "Won")">Won</option>
+                <option value="Lost" selected="@(ViewBag.Status == "Lost")">Lost</option>
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-filter me-1"></i>Filter</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Opportunity Data Table -->
+<div class="card overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Opportunity Name</th>
+                    <th>Customer / Lead</th>
+                    <th>Amount ($)</th>
+                    <th>Stage</th>
+                    <th>Probability</th>
+                    <th>Weighted Value</th>
+                    <th>Target Close Date</th>
+                    <th>Assigned To</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    @foreach (var o in Model)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@o.OpportunityId" class="fw-semibold text-primary text-decoration-none">
+                                    @o.OpportunityName
+                                </a>
+                            </td>
+                            <td>
+                                @if (o.Customer != null)
+                                {
+                                    <a asp-controller="Customers" asp-action="Details" asp-route-id="@o.CustomerId" class="text-dark text-decoration-none fw-medium">
+                                        <i class="bi bi-building me-1 text-muted"></i>@o.Customer.CustomerName
+                                    </a>
+                                }
+                                else if (o.Lead != null)
+                                {
+                                    <span class="text-muted"><i class="bi bi-person me-1"></i>@o.Lead.LeadName</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td class="fw-bold text-dark">$@o.Amount.ToString("N0")</td>
+                            <td>
+                                @if (o.Stage == "Won") { <span class="badge bg-success">Won</span> }
+                                else if (o.Stage == "Lost") { <span class="badge bg-danger">Lost</span> }
+                                else if (o.Stage == "Negotiation") { <span class="badge bg-warning text-dark">Negotiation</span> }
+                                else if (o.Stage == "Proposal") { <span class="badge bg-info text-dark">Proposal</span> }
+                                else { <span class="badge bg-secondary">Qualification</span> }
+                            </td>
+                            <td>@o.Probability%</td>
+                            <td class="text-success fw-semibold">$@o.WeightedPipeline.ToString("N0")</td>
+                            <td>
+                                <span class="@(o.Status == "Open" && o.ExpectedCloseDate.Date < DateTime.UtcNow.Date ? "text-danger fw-bold" : "text-muted")">
+                                    @o.ExpectedCloseDate.ToString("MMM dd, yyyy")
+                                </span>
+                            </td>
+                            <td>@(o.AssignedUser?.FullName ?? "Unassigned")</td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Details" asp-route-id="@o.OpportunityId" class="btn btn-outline-secondary" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@o.OpportunityId" class="btn btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="bi bi-briefcase fs-1 d-block mb-2"></i>
+                            No opportunities found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <div class="card-footer bg-white d-flex align-items-center justify-content-between p-3 border-top">
+            <div class="small text-muted">Page @ViewBag.CurrentPage of @ViewBag.TotalPages</div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1, search = ViewBag.Search, stage = ViewBag.Stage, status = ViewBag.Status })">Previous</a>
+                    </li>
+                    @for (int p = 1; p <= ViewBag.TotalPages; p++)
+                    {
+                        <li class="page-item @(p == ViewBag.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { page = p, search = ViewBag.Search, stage = ViewBag.Stage, status = ViewBag.Status })">@p</a>
+                        </li>
+                    }
+                    <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1, search = ViewBag.Search, stage = ViewBag.Stage, status = ViewBag.Status })">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

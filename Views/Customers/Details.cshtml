@@ -1,0 +1,205 @@
+@model AcxiomCRM.Models.Customer
+@{
+    ViewData["Title"] = $"Customer Details - {Model.CustomerName}";
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2">
+            <h4 class="fw-bold mb-0">@Model.CustomerName</h4>
+            <span class="badge bg-light text-dark border">@Model.CustomerCode</span>
+            <span class="badge @(Model.Status == "Active" ? "bg-success" : "bg-secondary")">@Model.Status</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">Created on @Model.CreatedDate.ToString("MMMM dd, yyyy")</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.CustomerId" class="btn btn-outline-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+        <a asp-controller="Opportunities" asp-action="Create" asp-route-customerId="@Model.CustomerId" class="btn btn-primary"><i class="bi bi-briefcase me-1"></i>New Opportunity</a>
+        <a asp-controller="FollowUps" asp-action="Create" asp-route-customerId="@Model.CustomerId" class="btn btn-outline-secondary"><i class="bi bi-calendar-plus me-1"></i>Schedule Follow-up</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<!-- AI Account Intelligence Card -->
+@if (ViewBag.AiSummary != null)
+{
+    <div class="card border-0 mb-4 text-white shadow-sm" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-info text-dark fw-bold"><i class="bi bi-robot me-1"></i>OmniRoute AI Account Synthesis</span>
+            </div>
+            <div class="small leading-relaxed" style="white-space: pre-line;">
+                @ViewBag.AiSummary
+            </div>
+        </div>
+    </div>
+}
+
+<div class="row g-4 mb-4">
+    <!-- Profile & Contact Information -->
+    <div class="col-lg-4">
+        <div class="card p-4 h-100">
+            <h6 class="fw-bold text-dark mb-3">Customer Information</h6>
+            <div class="mb-3">
+                <label class="text-muted small">Company</label>
+                <div class="fw-semibold">@(Model.CompanyName ?? "N/A")</div>
+            </div>
+            <div class="mb-3">
+                <label class="text-muted small">Email Address</label>
+                <div><a href="mailto:@Model.Email" class="text-primary text-decoration-none fw-medium">@Model.Email</a></div>
+            </div>
+            <div class="mb-3">
+                <label class="text-muted small">Phone Number</label>
+                <div><a href="tel:@Model.Phone" class="text-primary text-decoration-none fw-medium">@Model.Phone</a></div>
+            </div>
+            <div class="mb-3">
+                <label class="text-muted small">Address</label>
+                <div>@(Model.Address ?? "Not specified")</div>
+                <div class="small text-muted">@Model.City, @Model.State</div>
+            </div>
+            <div class="mb-3">
+                <label class="text-muted small">Assigned Sales Executive</label>
+                <div class="fw-semibold text-dark">@(Model.AssignedUser?.FullName ?? "Unassigned")</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Opportunities & Deals -->
+    <div class="col-lg-8">
+        <div class="card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold text-dark mb-0">Opportunities (@Model.Opportunities.Count)</h6>
+                <a asp-controller="Opportunities" asp-action="Create" asp-route-customerId="@Model.CustomerId" class="small fw-semibold text-decoration-none">Add Opportunity</a>
+            </div>
+
+            @if (Model.Opportunities.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Amount</th>
+                                <th>Stage</th>
+                                <th>Probability</th>
+                                <th>Weighted</th>
+                                <th>Close Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in Model.Opportunities)
+                            {
+                                <tr>
+                                    <td><a asp-controller="Opportunities" asp-action="Details" asp-route-id="@o.OpportunityId" class="fw-semibold text-primary text-decoration-none">@o.OpportunityName</a></td>
+                                    <td class="fw-bold">$@o.Amount.ToString("N0")</td>
+                                    <td><span class="badge bg-light text-dark border">@o.Stage</span></td>
+                                    <td>@o.Probability%</td>
+                                    <td class="text-success fw-medium">$@o.WeightedPipeline.ToString("N0")</td>
+                                    <td>@o.ExpectedCloseDate.ToString("MMM dd, yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted small">No opportunities linked to this customer yet.</div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Follow-ups and Activities Tabs -->
+<div class="row g-4 mb-4">
+    <!-- Scheduled Follow-ups -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold text-dark mb-0">Scheduled Follow-ups</h6>
+                <a asp-controller="FollowUps" asp-action="Create" asp-route-customerId="@Model.CustomerId" class="small fw-semibold text-decoration-none">Schedule New</a>
+            </div>
+
+            @if (Model.FollowUps.Any())
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var f in Model.FollowUps.OrderBy(x => x.FollowUpDate))
+                    {
+                        <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-semibold">@f.Subject</div>
+                                <small class="text-muted">@f.FollowUpType • @f.FollowUpDate.ToString("MMM dd, yyyy")</small>
+                            </div>
+                            <span class="badge @(f.Status == "Completed" ? "bg-success" : "bg-warning text-dark")">@f.Status</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-3 text-muted small">No follow-ups recorded.</div>
+            }
+        </div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold text-dark mb-0">Logged Activities</h6>
+                <a asp-controller="Activities" asp-action="Create" asp-route-customerId="@Model.CustomerId" class="small fw-semibold text-decoration-none">Log Activity</a>
+            </div>
+
+            @if (Model.Activities.Any())
+            {
+                <div class="list-group list-group-flush">
+                    @foreach (var a in Model.Activities.OrderByDescending(x => x.ActivityDate))
+                    {
+                        <div class="list-group-item px-0 py-2">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-semibold text-dark">@a.Subject</span>
+                                <small class="text-muted">@a.ActivityDate.ToString("MMM dd")</small>
+                            </div>
+                            <small class="text-muted">@a.ActivityType: @a.Description</small>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-3 text-muted small">No activities logged yet.</div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Audit History -->
+@if (ViewBag.AuditHistory != null && ((IEnumerable<AcxiomCRM.Models.AuditLog>)ViewBag.AuditHistory).Any())
+{
+    <div class="card p-4">
+        <h6 class="fw-bold text-dark mb-3">Customer Audit & Modification History</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in (IEnumerable<AcxiomCRM.Models.AuditLog>)ViewBag.AuditHistory)
+                    {
+                        <tr>
+                            <td>@log.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            <td>@(log.UserName ?? "System")</td>
+                            <td><span class="badge bg-secondary">@log.Action</span></td>
+                            <td class="small">@(log.NewValue ?? log.OldValue ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

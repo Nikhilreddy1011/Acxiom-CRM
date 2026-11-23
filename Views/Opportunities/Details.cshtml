@@ -1,0 +1,102 @@
+@model AcxiomCRM.Models.Opportunity
+@{
+    ViewData["Title"] = $"Opportunity - {Model.OpportunityName}";
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2">
+            <h4 class="fw-bold mb-0">@Model.OpportunityName</h4>
+            <span class="badge @(Model.Status == "Won" ? "bg-success" : Model.Status == "Lost" ? "bg-danger" : "bg-primary")">@Model.Status</span>
+            <span class="badge bg-light text-dark border">@Model.Stage</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">Target Close: @Model.ExpectedCloseDate.ToString("MMMM dd, yyyy")</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.OpportunityId" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to Pipeline</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Opportunity Metrics -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <h6 class="fw-bold text-dark mb-3">Commercial Terms</h6>
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="text-muted small">Total Deal Amount</div>
+                    <div class="fs-4 fw-bold text-dark">$@Model.Amount.ToString("N0")</div>
+                </div>
+                <div class="col-6">
+                    <div class="text-muted small">Win Probability</div>
+                    <div class="fs-4 fw-bold text-primary">@Model.Probability%</div>
+                </div>
+                <div class="col-12">
+                    <div class="text-muted small">Weighted Pipeline Revenue</div>
+                    <div class="fs-4 fw-bold text-success">$@Model.WeightedPipeline.ToString("N0")</div>
+                    <small class="text-muted">Formula: Amount × Probability ÷ 100</small>
+                </div>
+                <div class="col-12 pt-3 border-top">
+                    <div class="text-muted small">Current Pipeline Stage</div>
+                    <div class="progress mt-2" style="height: 12px;">
+                        @{
+                            int pct = Model.Stage switch
+                            {
+                                "Qualification" => 20,
+                                "Proposal" => 50,
+                                "Negotiation" => 80,
+                                "Won" => 100,
+                                _ => 10
+                            };
+                        }
+                        <div class="progress-bar @(Model.Stage == "Won" ? "bg-success" : Model.Stage == "Lost" ? "bg-danger" : "bg-primary")" style="width: @pct%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Account & Ownership -->
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <h6 class="fw-bold text-dark mb-3">Relationship & Ownership</h6>
+            <div class="mb-3">
+                <label class="text-muted small">Associated Customer</label>
+                @if (Model.Customer != null)
+                {
+                    <div>
+                        <a asp-controller="Customers" asp-action="Details" asp-route-id="@Model.CustomerId" class="fw-semibold text-primary text-decoration-none">
+                            <i class="bi bi-building me-1"></i>@Model.Customer.CustomerName
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted">None</div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <label class="text-muted small">Source Lead</label>
+                @if (Model.Lead != null)
+                {
+                    <div>
+                        <a asp-controller="Leads" asp-action="Details" asp-route-id="@Model.LeadId" class="fw-semibold text-dark text-decoration-none">
+                            <i class="bi bi-person me-1"></i>@Model.Lead.LeadName
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted">None</div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <label class="text-muted small">Deal Owner</label>
+                <div class="fw-semibold text-dark">@(Model.AssignedUser?.FullName ?? "Unassigned")</div>
+            </div>
+        </div>
+    </div>
+</div>

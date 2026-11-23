@@ -1,0 +1,115 @@
+@model IEnumerable<AcxiomCRM.Models.AuditLog>
+@{
+    ViewData["Title"] = "Security & Operational Audit Logs";
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Security & Operational Audit Trail</h4>
+        <p class="text-muted small mb-0">Total audit entries logged: @ViewBag.TotalCount</p>
+    </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Search user, action, module, record ID, or values..." />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select name="actionFilter" class="form-select">
+                <option value="">All Action Types</option>
+                @foreach (var act in (IEnumerable<string>)ViewBag.Actions)
+                {
+                    <option value="@act" selected="@(ViewBag.ActionFilter == act)">@act</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-filter me-1"></i>Filter</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+        </div>
+    </form>
+</div>
+
+<!-- Audit Log Table -->
+<div class="card overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Timestamp (UTC)</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Module / Entity</th>
+                    <th>Record ID</th>
+                    <th>Previous Value</th>
+                    <th>New Value</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    @foreach (var a in Model)
+                    {
+                        <tr>
+                            <td class="text-nowrap small text-muted">@a.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            <td>
+                                <span class="fw-semibold text-dark">@(a.UserName ?? "Anonymous / System")</span>
+                            </td>
+                            <td>
+                                @if (a.Action.Contains("Login")) { <span class="badge bg-info text-dark">@a.Action</span> }
+                                else if (a.Action.Contains("Created")) { <span class="badge bg-success">@a.Action</span> }
+                                else if (a.Action.Contains("Updated")) { <span class="badge bg-warning text-dark">@a.Action</span> }
+                                else if (a.Action.Contains("Deleted") || a.Action.Contains("Locked")) { <span class="badge bg-danger">@a.Action</span> }
+                                else { <span class="badge bg-secondary">@a.Action</span> }
+                            </td>
+                            <td><span class="badge bg-light text-dark border">@a.EntityName</span></td>
+                            <td class="small">@(a.RecordId ?? "-")</td>
+                            <td class="small text-muted text-truncate" style="max-width: 200px;">@(a.OldValue ?? "-")</td>
+                            <td class="small text-dark text-truncate" style="max-width: 250px;">@(a.NewValue ?? "-")</td>
+                            <td class="small text-muted">@(a.IpAddress ?? "127.0.0.1")</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-shield-check fs-1 d-block mb-2"></i>
+                            No audit log records match the search filter.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <div class="card-footer bg-white d-flex align-items-center justify-content-between p-3 border-top">
+            <div class="small text-muted">Page @ViewBag.CurrentPage of @ViewBag.TotalPages</div>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1, search = ViewBag.Search, actionFilter = ViewBag.ActionFilter })">Previous</a>
+                    </li>
+                    @for (int p = 1; p <= ViewBag.TotalPages; p++)
+                    {
+                        <li class="page-item @(p == ViewBag.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("Index", new { page = p, search = ViewBag.Search, actionFilter = ViewBag.ActionFilter })">@p</a>
+                        </li>
+                    }
+                    <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1, search = ViewBag.Search, actionFilter = ViewBag.ActionFilter })">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

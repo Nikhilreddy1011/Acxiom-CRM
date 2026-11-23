@@ -1,0 +1,304 @@
+@{
+    ViewData["Title"] = "CRM Analytics & Reports";
+    var reportType = ViewBag.ReportType as string ?? "Pipeline";
+    var isSales = User.IsInRole("SalesExecutive");
+    var isAdmin = User.IsInRole("Admin");
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">CRM Analytics & Reports</h4>
+        <p class="text-muted small mb-0">Role-governed intelligence reports with one-click CSV export.</p>
+    </div>
+    <div>
+        <a href="@Url.Action("ExportCsv", new { type = reportType })" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export to CSV
+        </a>
+    </div>
+</div>
+
+<!-- Report Navigation Tabs -->
+<div class="card mb-4">
+    <div class="card-header bg-white border-bottom-0 pb-0">
+        <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item">
+                <a class="nav-link @(reportType == "Pipeline" ? "active fw-bold text-primary" : "text-muted")" href="@Url.Action("Index", new { type = "Pipeline" })">
+                    <i class="bi bi-graph-up me-1"></i>Sales Pipeline
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(reportType == "Customer" ? "active fw-bold text-primary" : "text-muted")" href="@Url.Action("Index", new { type = "Customer" })">
+                    <i class="bi bi-people me-1"></i>Customers
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(reportType == "Lead" ? "active fw-bold text-primary" : "text-muted")" href="@Url.Action("Index", new { type = "Lead" })">
+                    <i class="bi bi-person-lines-fill me-1"></i>Leads
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(reportType == "Opportunity" ? "active fw-bold text-primary" : "text-muted")" href="@Url.Action("Index", new { type = "Opportunity" })">
+                    <i class="bi bi-briefcase me-1"></i>Opportunities
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(reportType == "FollowUp" ? "active fw-bold text-primary" : "text-muted")" href="@Url.Action("Index", new { type = "FollowUp" })">
+                    <i class="bi bi-calendar-check me-1"></i>Follow-ups
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(reportType == "Conversion" ? "active fw-bold text-primary" : "text-muted")" href="@Url.Action("Index", new { type = "Conversion" })">
+                    <i class="bi bi-arrow-repeat me-1"></i>Conversion
+                </a>
+            </li>
+            @if (!isSales)
+            {
+                <li class="nav-item">
+                    <a class="nav-link @(reportType == "UserActivity" ? "active fw-bold text-primary" : "text-muted")" href="@Url.Action("Index", new { type = "UserActivity" })">
+                        <i class="bi bi-person-workspace me-1"></i>User Activity
+                    </a>
+                </li>
+            }
+            @if (isAdmin)
+            {
+                <li class="nav-item">
+                    <a class="nav-link @(reportType == "Audit" ? "active fw-bold text-primary" : "text-muted")" href="@Url.Action("Index", new { type = "Audit" })">
+                        <i class="bi bi-clock-history me-1"></i>Audit Trail
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+</div>
+
+<!-- Report Content Body -->
+<div class="card overflow-hidden">
+    @if (reportType == "Pipeline" || reportType == "Opportunity")
+    {
+        var opps = (IEnumerable<AcxiomCRM.Models.Opportunity>)ViewBag.ReportData;
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Deal Name</th>
+                        <th>Client</th>
+                        <th>Amount</th>
+                        <th>Stage</th>
+                        <th>Probability</th>
+                        <th>Weighted Value</th>
+                        <th>Close Date</th>
+                        <th>Owner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in opps)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@o.OpportunityName</td>
+                            <td>@(o.Customer?.CustomerName ?? "-")</td>
+                            <td class="fw-bold">$@o.Amount.ToString("N0")</td>
+                            <td><span class="badge bg-light text-dark border">@o.Stage</span></td>
+                            <td>@o.Probability%</td>
+                            <td class="text-success fw-bold">$@o.WeightedPipeline.ToString("N0")</td>
+                            <td>@o.ExpectedCloseDate.ToString("yyyy-MM-dd")</td>
+                            <td>@(o.AssignedUser?.FullName ?? "Unassigned")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (reportType == "Customer")
+    {
+        var customers = (IEnumerable<AcxiomCRM.Models.Customer>)ViewBag.ReportData;
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Customer Name</th>
+                        <th>Company</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Owner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in customers)
+                    {
+                        <tr>
+                            <td><span class="badge bg-light text-dark border">@c.CustomerCode</span></td>
+                            <td class="fw-semibold">@c.CustomerName</td>
+                            <td>@(c.CompanyName ?? "-")</td>
+                            <td>@c.Email</td>
+                            <td>@c.Phone</td>
+                            <td><span class="badge @(c.Status == "Active" ? "bg-success" : "bg-secondary")">@c.Status</span></td>
+                            <td>@(c.AssignedUser?.FullName ?? "Unassigned")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (reportType == "Lead")
+    {
+        var leads = (IEnumerable<AcxiomCRM.Models.Lead>)ViewBag.ReportData;
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Lead Name</th>
+                        <th>Company</th>
+                        <th>Source</th>
+                        <th>Expected Value</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var l in leads)
+                    {
+                        <tr>
+                            <td><span class="badge bg-light text-dark border">@l.LeadCode</span></td>
+                            <td class="fw-semibold">@l.LeadName</td>
+                            <td>@(l.CompanyName ?? "-")</td>
+                            <td>@l.Source</td>
+                            <td class="fw-bold">$@l.ExpectedValue.ToString("N0")</td>
+                            <td><span class="badge bg-warning text-dark">@l.Priority</span></td>
+                            <td><span class="badge bg-primary">@l.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (reportType == "FollowUp")
+    {
+        var follows = (IEnumerable<AcxiomCRM.Models.FollowUp>)ViewBag.ReportData;
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Scheduled Date</th>
+                        <th>Type</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Owner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in follows)
+                    {
+                        <tr>
+                            <td>@f.FollowUpDate.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td><span class="badge bg-light text-dark border">@f.FollowUpType</span></td>
+                            <td class="fw-semibold">@f.Subject</td>
+                            <td><span class="badge @(f.Status == "Completed" ? "bg-success" : "bg-primary")">@f.Status</span></td>
+                            <td>@(f.AssignedUser?.FullName ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (reportType == "Conversion")
+    {
+        var conv = (IEnumerable<AcxiomCRM.Models.Lead>)ViewBag.ReportData;
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Lead</th>
+                        <th>Company</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                        <th>Created Date</th>
+                        <th>Owner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in conv)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@c.LeadName</td>
+                            <td>@(c.CompanyName ?? "-")</td>
+                            <td>@c.Source</td>
+                            <td>
+                                @if (c.Status == "Converted") { <span class="badge bg-success">Converted</span> }
+                                else { <span class="badge bg-secondary">@c.Status</span> }
+                            </td>
+                            <td>@c.CreatedDate.ToString("yyyy-MM-dd")</td>
+                            <td>@(c.AssignedUser?.FullName ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (reportType == "UserActivity")
+    {
+        var acts = (IEnumerable<AcxiomCRM.ViewModels.UserActivityReportItem>)ViewBag.ReportData;
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Team Member</th>
+                        <th>Role</th>
+                        <th>Calls</th>
+                        <th>Meetings</th>
+                        <th>Emails</th>
+                        <th>Tasks</th>
+                        <th>Total Activities</th>
+                        <th>Opportunities</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in acts)
+                    {
+                        <tr>
+                            <td class="fw-semibold text-dark">@u.UserName</td>
+                            <td><span class="badge bg-light text-dark border">@u.Role</span></td>
+                            <td>@u.TotalCalls</td>
+                            <td>@u.TotalMeetings</td>
+                            <td>@u.TotalEmails</td>
+                            <td>@u.TotalTasks</td>
+                            <td class="fw-bold text-primary">@u.TotalActivities</td>
+                            <td class="fw-bold text-success">@u.OpportunitiesManaged</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (reportType == "Audit")
+    {
+        var audits = (IEnumerable<AcxiomCRM.Models.AuditLog>)ViewBag.ReportData;
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Entity</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in audits)
+                    {
+                        <tr>
+                            <td class="small">@a.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            <td>@(a.UserName ?? "System")</td>
+                            <td><span class="badge bg-secondary">@a.Action</span></td>
+                            <td>@a.EntityName</td>
+                            <td class="small">@(a.NewValue ?? a.OldValue ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
