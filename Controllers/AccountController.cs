@@ -122,6 +122,7 @@ public class AccountController : Controller
             FullName = model.FullName,
             Role = assignedRole,
             IsActive = true,
+            EmailConfirmed = true,
             CreatedDate = DateTime.UtcNow
         };
 
