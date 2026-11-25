@@ -86,8 +86,8 @@ public class HomeController : Controller
         var wonOpps = await oppsQuery.Where(o => o.Status == "Won").CountAsync();
         var lostOpps = await oppsQuery.Where(o => o.Status == "Lost").CountAsync();
 
-        var totalPipeline = await oppsQuery.Where(o => o.Status == "Open").SumAsync(o => (decimal?)o.Amount) ?? 0;
         var oppsList = await oppsQuery.ToListAsync();
+        var totalPipeline = oppsList.Where(o => o.Status == "Open").Sum(o => o.Amount);
         var weightedPipeline = oppsList.Where(o => o.Status == "Open").Sum(o => o.WeightedPipeline);
 
         // Chart 1: Lead Status Distribution
@@ -97,22 +97,23 @@ public class HomeController : Controller
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToDictionaryAsync(k => k.Status, v => v.Count);
 
-        // Chart 2: Opportunity Stage Distribution
-        var oppStages = await _context.Opportunities
+        // Chart 2: Opportunity Stage Distribution & Chart 3: Monthly Sales Performance
+        var allOpps = await _context.Opportunities
             .Where(o => !isSales || o.AssignedTo == currentUserId)
-            .GroupBy(o => o.Stage)
-            .Select(g => new { Stage = g.Key, Total = g.Sum(x => x.Amount) })
-            .ToDictionaryAsync(k => k.Stage, v => v.Total);
+            .ToListAsync();
 
-        // Chart 3: Monthly Sales Performance (last 6 months)
+        var oppStages = allOpps
+            .GroupBy(o => o.Stage)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Amount));
+
         var monthlyPerformance = new Dictionary<string, decimal>();
         for (int i = 5; i >= 0; i--)
         {
             var monthDate = now.AddMonths(-i);
             var monthKey = monthDate.ToString("MMM yyyy");
-            var monthTotal = await _context.Opportunities
-                .Where(o => (!isSales || o.AssignedTo == currentUserId) && o.Status == "Won" && o.CreatedDate.Month == monthDate.Month && o.CreatedDate.Year == monthDate.Year)
-                .SumAsync(o => (decimal?)o.Amount) ?? 0;
+            var monthTotal = allOpps
+                .Where(o => o.Status == "Won" && o.CreatedDate.Month == monthDate.Month && o.CreatedDate.Year == monthDate.Year)
+                .Sum(o => o.Amount);
             monthlyPerformance[monthKey] = monthTotal;
         }
 

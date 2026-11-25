@@ -71,7 +71,8 @@ public class OpportunitiesController : Controller
             .Take(pageSize)
             .ToListAsync();
 
-        var totalPipeline = await query.Where(o => o.Status == "Open").SumAsync(o => (decimal?)o.Amount) ?? 0;
+        var openAmounts = await query.Where(o => o.Status == "Open").Select(o => o.Amount).ToListAsync();
+        var totalPipeline = openAmounts.Sum();
         var weightedPipeline = opps.Where(o => o.Status == "Open").Sum(o => o.WeightedPipeline);
 
         ViewBag.Search = search;
